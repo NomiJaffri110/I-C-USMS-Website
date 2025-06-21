@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USMS Information & Computing Chatbot</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #002366; /* Navy Blue */
+            --secondary-color: #D10000; /* Red */
+            --chatbot-bg: #ffffff;
+            --user-bubble: #e3f2fd;
+            --bot-bubble: #f1f1f1;
+            --text-color: #333333;
+            --light-gray: #f5f5f5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Chatbot Container */
+        .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .chatbot-container.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Chatbot Header */
+        .chatbot-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chatbot-header h3 {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .chatbot-header .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        /* Chatbot Body */
+        .chatbot-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: var(--light-gray);
+        }
+
+        /* Chat Messages */
+        .chat-message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            margin-bottom: 5px;
+            line-height: 1.4;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-items: flex-end;
+        }
+
+        .user-message .message-content {
+            background-color: var(--user-bubble);
+            color: var(--text-color);
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message {
+            align-items: flex-start;
+        }
+
+        .bot-message .message-content {
+            background-color: var(--bot-bubble);
+            color: var(--text-color);
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: #777;
+        }
+
+        /* Quick Reply Buttons */
+        .quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .quick-reply-btn {
+            background-color: white;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-reply-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Chatbot Input Area */
+        .chatbot-input {
+            display: flex;
+            padding: 10px;
+            background-color: white;
+            border-top: 1px solid #eee;
+        }
+
+        .chatbot-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .chatbot-input button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .chatbot-input button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        /* Chatbot Icon */
+        .chatbot-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 999;
+            transition: all 0.3s;
+        }
+
+        .chatbot-icon:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        .chatbot-icon i {
+            font-size: 1.5rem;
+        }
+
+        .chatbot-icon .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--secondary-color);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            padding: 10px 15px;
+            background-color: var(--bot-bubble);
+            border-radius: 18px;
+            border-bottom-left-radius: 5px;
+            width: fit-content;
+            margin-bottom: 15px;
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #666;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            opacity: 0.4;
+        }
+
+        .typing-indicator span:nth-child(1) {
+            animation: typingAnimation 1s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation: typingAnimation 1s infinite 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation: typingAnimation 1s infinite 0.4s;
+        }
+
+        @keyframes typingAnimation {
+            0% { opacity: 0.4; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-3px); }
+            100% { opacity: 0.4; transform: translateY(0); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .chatbot-container {
+                width: 100%;
+                height: 100%;
+                bottom: 0;
+                right: 0;
+                border-radius: 0;
+            }
+
+            .chatbot-icon {
+                bottom: 15px;
+                right: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Chatbot Icon -->
+    <div class="chatbot-icon" id="chatbotIcon">
+        <i class="fas fa-robot"></i>
+        <span class="notification-badge" id="notificationBadge" style="display: none;">1</span>
+    </div>
+
+    <!-- Chatbot Container -->
+    <div class="chatbot-container" id="chatbotContainer">
+        <div class="chatbot-header">
+            <h3>USMS Information & Computing Assistant</h3>
+            <button class="close-btn" id="closeChatbot"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="chatbot-body" id="chatbotBody">
+            <!-- Messages will appear here -->
+            <div class="chat-message bot-message">
+                <div class="message-content">
+                    Hello! I'm the USMS Information & Computing assistant. How can I help you today?
+                </div>
+                <div class="message-time">Just now</div>
+                <div class="quick-replies">
+                    <button class="quick-reply-btn" data-reply="Admission requirements">Admission requirements</button>
+                    <button class="quick-reply-btn" data-reply="Program details">Program details</button>
+                    <button class="quick-reply-btn" data-reply="Contact information">Contact information</button>
+                </div>
+            </div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="userInput" placeholder="Type your message here..." autocomplete="off">
+            <button id="sendMessage"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const chatbotIcon = document.getElementById('chatbotIcon');
+            const chatbotContainer = document.getElementById('chatbotContainer');
+            const closeChatbot = document.getElementById('closeChatbot');
+            const chatbotBody = document.getElementById('chatbotBody');
+            const userInput = document.getElementById('userInput');
+            const sendMessage = document.getElementById('sendMessage');
+            const notificationBadge = document.getElementById('notificationBadge');
+
+            // Toggle chatbot visibility
+            chatbotIcon.addEventListener('click', function() {
+                chatbotContainer.classList.toggle('active');
+                notificationBadge.style.display = 'none';
+            });
+
+            closeChatbot.addEventListener('click', function() {
+                chatbotContainer.classList.remove('active');
+            });
+
+            // Send message function
+            function sendMessageToChatbot(message) {
+                if (message.trim() === '') return;
+
+                // Add user message to chat
+                addMessageToChat(message, 'user');
+                userInput.value = '';
+
+                // Show typing indicator
+                showTypingIndicator();
+
+                // Simulate bot response after a delay
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    const botResponse = generateBotResponse(message);
+                    addMessageToChat(botResponse.text, 'bot', botResponse.quickReplies);
+                    
+                    // Show notification badge if chat is closed
+                    if (!chatbotContainer.classList.contains('active')) {
+                        notificationBadge.style.display = 'flex';
+                    }
+                }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
+            }
+
+            // Send message on button click
+            sendMessage.addEventListener('click', function() {
+                sendMessageToChatbot(userInput.value);
+            });
+
+            // Send message on Enter key
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessageToChatbot(userInput.value);
+                }
+            });
+
+            // Quick reply buttons
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('quick-reply-btn')) {
+                    const reply = e.target.getAttribute('data-reply');
+                    sendMessageToChatbot(reply);
+                }
+            });
+
+            // Add message to chat
+            function addMessageToChat(message, sender, quickReplies = null) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${sender}-message`;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = message;
+                
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = getCurrentTime();
+                
+                messageDiv.appendChild(contentDiv);
+                messageDiv.appendChild(timeDiv);
+                
+                if (quickReplies && sender === 'bot') {
+                    const quickRepliesDiv = document.createElement('div');
+                    quickRepliesDiv.className = 'quick-replies';
+                    
+                    quickReplies.forEach(reply => {
+                        const button = document.createElement('button');
+                        button.className = 'quick-reply-btn';
+                        button.setAttribute('data-reply', reply);
+                        button.textContent = reply;
+                        quickRepliesDiv.appendChild(button);
+                    });
+                    
+                    messageDiv.appendChild(quickRepliesDiv);
+                }
+                
+                chatbotBody.appendChild(messageDiv);
+                scrollToBottom();
+            }
+
+            // Show typing indicator
+            function showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'typing-indicator';
+                typingDiv.id = 'typingIndicator';
+                typingDiv.innerHTML = '<span></span><span></span><span></span>';
+                chatbotBody.appendChild(typingDiv);
+                scrollToBottom();
+            }
+
+            // Remove typing indicator
+            function removeTypingIndicator() {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+
+            // Scroll to bottom of chat
+            function scrollToBottom() {
+                chatbotBody.scrollTop = chatbotBody.scrollHeight;
+            }
+
+            // Get current time in HH:MM format
+            function getCurrentTime() {
+                const now = new Date();
+                let hours = now.getHours();
+                let minutes = now.getMinutes();
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                
+                hours = hours % 12;
+                hours = hours ? hours : 12; // Convert 0 to 12
+                minutes = minutes < 10 ? '0' + minutes : minutes;
+                
+                return `${hours}:${minutes} ${ampm}`;
+            }
+
+            // Generate bot response (in a real app, this would call an API)
+            function generateBotResponse(userMessage) {
+                const lowerMessage = userMessage.toLowerCase();
+                let response = {};
+                
+                if (lowerMessage.includes('admission') || lowerMessage.includes('requirement')) {
+                    response.text = "For admission to our BS programs, you need:\n\n- Minimum 60% marks in Intermediate/HSC\n- Passing marks in our entrance test\n- Completed application form with required documents\n\nWould you like more details about any specific program?";
+                    response.quickReplies = ["BS IT admission", "BS CS admission", "Application deadline"];
+                } 
+                else if (lowerMessage.includes('program') || lowerMessage.includes('course')) {
+                    response.text = "We offer two undergraduate programs:\n\n1. BS Information Technology (4 years)\n2. BS Computer Science (4 years)\n\nBoth programs include core computing courses with specialized tracks in later years. The IT program focuses more on applied technology while CS is more theoretical.";
+                    response.quickReplies = ["BS IT curriculum", "BS CS curriculum", "Career opportunities"];
+                }
+                else if (lowerMessage.includes('contact') || lowerMessage.includes('email') || lowerMessage.includes('phone')) {
+                    response.text = "You can contact the Department of Information & Computing at:\n\n📞 Phone: +92 XXX XXXXXXX\n📧 Email: computing@usms.edu.pk\n🏢 Office: Room 205, CS Block, USMS Bhitshah\n\nOffice hours: 9:00 AM to 4:00 PM (Monday to Friday)";
+                    response.quickReplies = ["Chairperson contact", "Faculty contacts", "Location map"];
+                }
+                else if (lowerMessage.includes('fee') || lowerMessage.includes('tuition')) {
+                    response.text = "Our current fee structure is:\n\n- Admission Fee: Rs. 10,000 (one-time)\n- Semester Fee: Rs. 25,000\n- Examination Fee: Rs. 2,000 per semester\n\nWe also offer merit scholarships and financial aid for deserving students.";
+                    response.quickReplies = ["Scholarship details", "Payment methods", "Installment plan"];
+                }
+                else {
+                    response.text = "I'm sorry, I didn't understand your question. Could you please rephrase it or choose from these common topics?";
+                    response.quickReplies = ["Admission requirements", "Program details", "Contact information", "Fee structure"];
+                }
+                
+                return response;
+            }
+
+            // Initial greeting when page loads
+            setTimeout(() => {
+                if (!chatbotContainer.classList.contains('active')) {
+                    notificationBadge.style.display = 'flex';
+                }
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
